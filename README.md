@@ -1,17 +1,11 @@
-# libigl example project
+# MeshLessDeformDemo
 
-A blank project example showing how to use libigl and cmake. Feel free and
-encouraged to copy or fork this project as a way of starting a new personal
-project using libigl.
-
-## See the tutorial first
-
-Then build, run and understand the [libigl
-tutorial](http://libigl.github.io/libigl/tutorial/).
+A course project of INF-574 in Ecole Polytechnique based on libigl
+<c++17>
 
 ## Dependencies
 
-The only dependencies are STL, Eigen, [libigl](http://libigl.github.io/libigl/) and the dependencies
+Currently the dependencies are STL, Eigen, [libigl](http://libigl.github.io/libigl/) and the dependencies
 of the `igl::opengl::glfw::Viewer` (OpenGL, glad and GLFW).
 The CMake build system will automatically download libigl and its dependencies using
 [CMake FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html),
@@ -35,12 +29,12 @@ Compile this project using the standard cmake routine:
     cmake ..
     make
 
-This should find and build the dependencies and create a `example_bin` binary.
+This should find and build the dependencies and create a `demo_bin` binary.
 
 ## Run
 
 From within the `build` directory just issue:
 
-    ./example
+    ./demo {filepath}
 
-A glfw app should launch displaying a 3D cube.
+A glfw app should launch.
