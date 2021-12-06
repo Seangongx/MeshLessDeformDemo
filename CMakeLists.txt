@@ -15,26 +15,23 @@ option(LIBIGL_USE_STATIC_LIBRARY     "Use libIGL as static librarie" ON)
 #find_package(LIBIGL REQUIRED QUIET)
 include(libigl)
 
-#target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-
-target_include_directories(${PROJECT_NAME} PRIVATE 
-src/ 
-)
-
-target_sources(${PROJECT_NAME}  PRIVATE
-# headers
-	src/viewcontrol.h
-	src/deformablemodel.h
-
-# sources
-	src/main.cpp
-	src/viewcontrol.cpp
-	src/deformablemodel.cpp
-)
-
-
 # Add your project files
-file(GLOB SRCFILES *.cpp)
-add_executable(${PROJECT_NAME} ${SRCFILES})
+# set_property(GLOBAL PROPERTY USE_FOLDER ON)
+file(GLOB HEADFILES src/*.h)
+file(GLOB SRCFILES src/*.cpp)
+add_executable(${PROJECT_NAME} ${HEADFILES} ${SRCFILES})
+
+# Some features need c++17
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+
+target_include_directories(${PROJECT_NAME}
+PRIVATE
+	src/
+)
+
 # Add imgui(Don't forget!)
-target_link_libraries(${PROJECT_NAME} PUBLIC igl::core igl::opengl_glfw igl::opengl_glfw_imgui)
+target_link_libraries(${PROJECT_NAME} PUBLIC 
+	igl::core
+	igl::opengl_glfw
+	igl::opengl_glfw_imgui
+)

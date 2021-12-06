@@ -5,7 +5,7 @@
 class DeformModel
 {
 public:
-	DeformModel();
+	DeformModel() {}
 	DeformModel(std::string const& filepath, size_t id);
 
 	inline Eigen::MatrixXd & V() { return m_V; }

@@ -3,6 +3,8 @@
 *   https://dl.acm.org/doi/10.1145/1073204.1073216
 *   Demo Author: Xun GONG(telecom-paris)
 *   Date: 12-12-2021
+* 
+*   example: 407 409 708
 */
 
 #include <cstdlib>
@@ -53,7 +55,7 @@ int main(int argc, char *argv[])
     ViewControl vc;
 
     // Model Select
-    if (argc < 1) {
+    if (argc < 2) {
         std::cerr << "MAYBE FAIL TO LOAD YOU WANT..." << std::endl;
 
         // Test cube data
@@ -66,13 +68,16 @@ int main(int argc, char *argv[])
     }
     else
     {
-        std::string filepath(argv[1]);
+        for (size_t i = 1; i < argc; i++) {
 
-        DeformModel dm(filepath, vc.geDeformSize());
-        vc.addModel(dm);
+            std::string filepath(argv[i]);
+            DeformModel dm(filepath, vc.getDeformSize());
+            vc.addModel(dm);
+        }
     }
 
     // Plot the mesh
     vc.load();
+    vc.launch();
 
 }
