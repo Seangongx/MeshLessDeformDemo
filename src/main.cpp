@@ -3,7 +3,7 @@
 *   https://dl.acm.org/doi/10.1145/1073204.1073216
 *   Demo Author: Xun GONG(telecom-paris)
 *   Date: 12-12-2021
-* 
+*
 *   example: 407 409 708
 */
 
@@ -15,11 +15,11 @@
 using namespace std;
 
 /// <summary>
-/// Inner test Data
+/// Inner test Cube
 /// </summary>
-/// <param name="V"> Vertice data </param>
-/// <param name="F"> Indice data </param>
-void LoadCube(Eigen::MatrixXd &V, Eigen::MatrixXi &F)
+/// <param name="V"> Vertices data </param>
+/// <param name="F"> Indices data </param>
+void LoadCube(Eigen::MatrixXd& V, Eigen::MatrixXi& F)
 {
     V = (Eigen::MatrixXd(8, 3) <<
         0.0, 0.0, 0.0,
@@ -29,7 +29,7 @@ void LoadCube(Eigen::MatrixXd &V, Eigen::MatrixXi &F)
         1.0, 0.0, 0.0,
         1.0, 0.0, 1.0,
         1.0, 1.0, 0.0,
-        1.0, 1.0, 1.0).finished();
+        1.0, 1.0, 1.0).finished().array() + 0.0001;
     // cout << "V:\n" << V << endl;
 
     // convert index to index-1 (from 0)
@@ -49,22 +49,46 @@ void LoadCube(Eigen::MatrixXd &V, Eigen::MatrixXi &F)
     // cout << "F:\n" << F << endl;
 }
 
+/// <summary>
+/// Inner test Plane
+/// </summary>
+/// <param name="V"> Vertices data </param>
+/// <param name="F"> Indices data</param>
+void LoadPlane(Eigen::MatrixXd& V, Eigen::MatrixXi& F)
+{
+    V = (Eigen::MatrixXd(4, 3) <<
+        1.0, 0.0, 1.0,
+        1.0, 0.0, -1.0,
+        -1.0, 0.0, 1.0,
+        -1.0, 0.0, -1.0).finished();
+    // cout << "V:\n" << V << endl;
 
-int main(int argc, char *argv[])
+    // convert index to index-1 (from 0)
+    F = (Eigen::MatrixXi(2, 3) <<
+        1, 3, 2,
+        2, 3, 4).finished().array() - 1;
+    // cout << "F:\n" << F << endl;
+}
+
+
+
+int main(int argc, char* argv[])
 {
     ViewControl vc;
+    // Given a plane
+    Eigen::MatrixXd V2;
+    Eigen::MatrixXi F2;
+    LoadCube(V2, F2);
+    Rawdata plane = { V2, F2 };
+    DeformModel deformPlane(plane, vc.getDeformSize());
+    deformPlane.scale(Eigen::RowVector3d(20, 0.05, 20));
+    deformPlane.translate(Eigen::RowVector3d(-10, -0.025, -10));
+    vc.addModel(deformPlane);
 
     // Model Select
     if (argc < 2) {
-        std::cerr << "MAYBE FAIL TO LOAD YOU WANT..." << std::endl;
-
-        // Test cube data
-        Eigen::MatrixXd V;
-        Eigen::MatrixXi F;
-        LoadCube(V, F);
-        Rawdata cube = { V, F };
-
-        vc.addModel(cube);
+        std::cerr << "MAYBE FAIL TO LOAD YOU WANT...\n \
+                     REMEMBER DIFFERENT PATH BETWEEN WINDOWS AND LINUX" << std::endl;
     }
     else
     {
@@ -72,6 +96,7 @@ int main(int argc, char *argv[])
 
             std::string filepath(argv[i]);
             DeformModel dm(filepath, vc.getDeformSize());
+            dm.translate(Eigen::RowVector3d(2.5 * Eigen::RowVector3d::Random().array() + 2.5));
             vc.addModel(dm);
         }
     }
@@ -81,3 +106,4 @@ int main(int argc, char *argv[])
     vc.launch();
 
 }
+

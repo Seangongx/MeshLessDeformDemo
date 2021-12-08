@@ -6,12 +6,32 @@
 #include <filesystem> // c++17
 #include "deformmodel.h"
 
-struct Rawdata
-{
-	Eigen::MatrixXd V;
-	Eigen::MatrixXi F;
+#define DEBUG
 
+struct DeformParameters
+{
+	bool show_triangles = false;
+	bool pause = false;
+	// Scene statistics:
+	unsigned int meshes = 0;
+	unsigned int fps = 0;
+	unsigned int vertices = 0;
+	unsigned int triangles = 0;
+	unsigned int memory = 0;
 };
+
+
+struct Pick
+{
+	bool picked = false;
+	DeformModel* object;
+	int mouseX, mouseY;
+	unsigned int fid = 0;
+	unsigned int vi = 0;
+	// barycentric coordinate
+	Eigen::Vector3f bc; 
+};
+
 
 class ViewControl
 {
@@ -23,11 +43,10 @@ public:
 		rawModels.push_back(d);
 	}
 	inline void addModel(DeformModel& d) {
-		colors.emplace(viewer.data().id, 0.5 * Eigen::RowVector3d::Random().array() + 0.5);
-		deformModels.push_back(d);
+		models.push_back(d);
 	}
 	inline void removeModel(size_t id) {
-		deformModels.erase(deformModels.begin() + id);
+		models.erase(models.begin() + id);
 	}
 	inline void launch() {
 		viewer.launch();
@@ -36,9 +55,11 @@ public:
 
 	// get:
 	inline size_t getRawSize() { return rawModels.size(); }
-	inline size_t getDeformSize() { return deformModels.size(); }
+	inline size_t getDeformSize() { return models.size(); }
 
 	// set:
+
+	void clearAllFixedPoints();
 
 private:
 	// Functions
@@ -49,9 +70,9 @@ private:
 	// Attributes
 
 	std::vector<Rawdata> rawModels;
-	std::vector<DeformModel> deformModels;
-	// Colors only for deformModels
-	std::map<int, Eigen::RowVector3d> colors;
+	std::vector<DeformModel> models;
+	DeformParameters params;
+	Pick pick;
 
 	igl::opengl::glfw::Viewer viewer;
 	igl::opengl::glfw::imgui::ImGuiMenu menu;
