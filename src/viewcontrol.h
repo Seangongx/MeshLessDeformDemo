@@ -65,7 +65,8 @@ public:
 	ViewControl();
 
 	// Interfaces:
-	inline void addModel(Rawdata& d) { rawModels.push_back(d); }
+	//inline void addModel(Rawdata& d) { rawModels.push_back(d); }
+	inline void addModel(RawModel& d) { rawModels.push_back(d); }
 	inline void addModel(DeformModel& d) { models.push_back(d); }
 	inline void removeModel(size_t id) { models.erase(models.begin() + id); }
 	inline void launch() { viewer.launch(); }
@@ -89,7 +90,7 @@ private:
 
 	// Attributes
 
-	std::vector<Rawdata> rawModels;
+	std::vector<RawModel> rawModels;
 	std::vector<DeformModel> models;
 	DeformParameters params;
 	Pick pick;

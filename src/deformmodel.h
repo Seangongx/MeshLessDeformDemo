@@ -1,13 +1,6 @@
 #pragma once
 
-#include <Eigen/Core>
-
-struct Rawdata
-{
-	Eigen::MatrixXd V;
-	Eigen::MatrixXi F;
-
-};
+#include "rawmodel.h"
 
 enum DeformMode
 { 
@@ -21,6 +14,7 @@ class DeformModel
 {
 public:
 	DeformModel() {}
+	~DeformModel() {};
 	DeformModel(Rawdata& data, size_t id);
 	DeformModel(std::string const& filepath, size_t id);
 
@@ -29,11 +23,11 @@ public:
 	void integrate(double dt);
 	void integrate_quadratic(double dt);
 
-
 #pragma region tranform
 
-	void translate(Eigen::RowVector3d& t);
-	void scale(Eigen::RowVector3d& s);
+	//void translate(Eigen::RowVector3d& t);
+	//void scale(Eigen::RowVector3d& s);
+	//void rotate(Eigen::RowVector3d u, double theta);
 
 #pragma endregion
 

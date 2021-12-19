@@ -16,9 +16,11 @@ ViewControl::ViewControl()
 void ViewControl::load() {
 
     viewer.data().clear();
+    viewer.data().show_lines = false;
+    //viewer.data().double_sided = true;
 
     for (size_t t = 0; t < rawModels.size(); t++) {
-        viewer.data().set_mesh(rawModels[t].V, rawModels[t].F);
+        viewer.data().set_mesh(rawModels[t].V(), rawModels[t].F());
         viewer.append_mesh();
     }
 
@@ -33,8 +35,6 @@ void ViewControl::load() {
         viewer.append_mesh();
         if(!models[t].hasTEX())
             viewer.data(t).set_colors(models[t].getColor());
-        viewer.data().show_lines = false;
-        //viewer.data().double_sided = true;
 	}
     //viewer.data().set_face_based(true);
 };
@@ -62,7 +62,7 @@ void ViewControl::initMenu()
                 if (std::filesystem::exists(loadModel) && std::filesystem::is_regular_file(loadModel))
                 {
                     DeformModel openModel(filename, getDeformSize());
-                    openModel.translate(Eigen::RowVector3d(2.5 * Eigen::RowVector3d::Random().array() + 2.5));
+                    //openModel.translate(Eigen::RowVector3d(2.5 * Eigen::RowVector3d::Random().array() + 2.5));
                     addModel(openModel);
                     int tid = models.size() - 1;
                     viewer.data().clear();

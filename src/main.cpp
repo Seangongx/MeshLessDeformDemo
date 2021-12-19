@@ -86,7 +86,7 @@ void scale(Eigen::MatrixXd& V, Eigen::RowVector3d& t)
 /// <param name="V"> Vertices data </param>
 /// <param name="u"> Transform axis</param>
 /// <param name="theta"> Angle using double</param>
-void Rotation(Eigen::MatrixXd& V, Eigen::RowVector3d u, double theta) {
+void rotate(Eigen::MatrixXd& V, Eigen::RowVector3d u, double theta) {
     u.normalize();
     // never forget to normalize
     Eigen::Quaterniond q = Eigen::Quaterniond(cos(theta) / 2, sin(theta) * u.x(), sin(theta) * u.y(), sin(theta) * u.z()).normalized();
@@ -104,27 +104,41 @@ void Rotation(Eigen::MatrixXd& V, Eigen::RowVector3d u, double theta) {
 /// </summary>
 /// <param name="V"> Vertices data </param>
 /// <param name="F"> Indices data</param>
-void LoadDefaultScene(Eigen::MatrixXd& V, Eigen::MatrixXi& F, ViewControl& vc) {
-    LoadCube(V, F);
+void LoadDefaultScene(ViewControl& vc) {
+    // Given a plane
+    Eigen::MatrixXd V_Plane;
+    Eigen::MatrixXi F_Plane;
+
+    LoadCube(V_Plane, F_Plane);
     Eigen::MatrixXd tempV[4];
     Eigen::MatrixXi tempF[4];
     for (int i = 0; i < 4; i++) {
-        tempV[i] = V;
-        tempF[i] = F;
+        tempV[i] = V_Plane;
+        tempF[i] = F_Plane;
     }
     // Left
 
     // Middle
+    Rawdata d1 = { tempV[1], tempF[1] };
+    RawModel p1(tempV[1], tempF[1], vc.getDeformSize());
+    std::cout << "P1 vertices: " << p1.V().rows() << " and P1 Faces: " << p1.F().rows() << std::endl;
+    p1.scale(Eigen::RowVector3d(20, 0.05, 20));
+    p1.translate(Eigen::RowVector3d(-10, -0.025, -10));
+    p1.rotate(Eigen::RowVector3d(0, 1, 0), 1.57);
+    std::cout << "P1 vertices: " << p1.V().rows() << " and P1 Faces: " << p1.F().rows() << std::endl;
 
+    vc.addModel(p1);
     // Right
 
-    // Ground
 
-    Rawdata plane = { tempV[3], tempF[3] };
-    DeformModel deformPlane(plane, vc.getDeformSize());
-    deformPlane.scale(Eigen::RowVector3d(20, 0.05, 20));
-    deformPlane.translate(Eigen::RowVector3d(-10, -0.025, -10));
-    vc.addModel(deformPlane);
+    // Ground
+    RawModel p3(tempV[3], tempF[3], vc.getDeformSize());
+    std::cout << "P3 vertices: " << p3.V().rows() << " and P3 Faces: " << p3.F().rows() << std::endl;
+    p3.scale(Eigen::RowVector3d(20, 0.05, 20));
+    p3.translate(Eigen::RowVector3d(-10, -0.025, -10));
+    std::cout << "P3 vertices: " << p3.V().rows() << " and P3 Faces: " << p3.F().rows() << std::endl;
+
+    vc.addModel(p3);
 
 }
 
@@ -132,30 +146,27 @@ void LoadDefaultScene(Eigen::MatrixXd& V, Eigen::MatrixXi& F, ViewControl& vc) {
 int main(int argc, char* argv[])
 {
     ViewControl vc;
-    // Given a plane
-    Eigen::MatrixXd V_Plane;
-    Eigen::MatrixXi F_Plane;
-    LoadDefaultScene(V_Plane, F_Plane, vc);
+    LoadDefaultScene(vc);
 
-    std::cout << vc.getDeformSize() << std::endl;
-    DeformModel cube("../data/cube.obj", vc.getDeformSize());
-    vc.addModel(cube);
+    //std::cout << vc.getDeformSize() << std::endl;
+    //DeformModel cube("../data/cube.obj", vc.getDeformSize());
+    //vc.addModel(cube);
 
-    // Model Select
-    if (argc < 2) {
-        std::cerr << "MAYBE FAIL TO LOAD YOU WANT...\n \
-                     REMEMBER DIFFERENT PATH BETWEEN WINDOWS AND LINUX" << std::endl;
-    }
-    else
-    {
-        for (size_t i = 1; i < argc; i++) {
+    //// Model Select
+    //if (argc < 2) {
+    //    std::cerr << "MAYBE FAIL TO LOAD YOU WANT...\n \
+    //                 REMEMBER DIFFERENT PATH BETWEEN WINDOWS AND LINUX" << std::endl;
+    //}
+    //else
+    //{
+    //    for (size_t i = 1; i < argc; i++) {
 
-            std::string filepath(argv[i]);
-            DeformModel dm(filepath, vc.getDeformSize());
-            dm.translate(Eigen::RowVector3d(2.5 * Eigen::RowVector3d::Random().array() + 2.5));
-            vc.addModel(dm);
-        }
-    }
+    //        std::string filepath(argv[i]);
+    //        DeformModel dm(filepath, vc.getDeformSize());
+    //        dm.translate(Eigen::RowVector3d(2.5 * Eigen::RowVector3d::Random().array() + 2.5));
+    //        vc.addModel(dm);
+    //    }
+    //}
 
     // Plot the mesh
     vc.load();

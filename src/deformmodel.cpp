@@ -179,26 +179,29 @@ void DeformModel::reset()
     m_forces.setZero();
 }
 
-void DeformModel::translate(Eigen::RowVector3d& t)
-{
-    for (int i = 0; i < m_V.rows(); i++)
-    {
-        m_V.row(i) += t;
-    }
-    m_dtV = m_V;
-}
-
-void DeformModel::scale(Eigen::RowVector3d& t)
-{
-
-    for (int i = 0; i < m_V.rows(); i++)
-    {
-        m_V.row(i).x() *= t.x();
-        m_V.row(i).y() *= t.y();
-        m_V.row(i).z() *= t.z();
-    }
-    m_dtV = m_V;
-}
+//#pragma region tranform
+//void DeformModel::translate(Eigen::RowVector3d& t)
+//{
+//    for (int i = 0; i < m_V.rows(); i++)
+//    {
+//        m_V.row(i) += t;
+//    }
+//    m_dtV = m_V;
+//}
+//
+//void DeformModel::scale(Eigen::RowVector3d& t)
+//{
+//
+//    for (int i = 0; i < m_V.rows(); i++)
+//    {
+//        m_V.row(i).x() *= t.x();
+//        m_V.row(i).y() *= t.y();
+//        m_V.row(i).z() *= t.z();
+//    }
+//    m_dtV = m_V;
+//}
+//
+//#pragma endregion
 
 size_t DeformModel::getMemoryBytes()
 {
