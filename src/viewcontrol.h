@@ -80,6 +80,9 @@ public:
 	inline size_t getDeformSize() { return models.size(); }
 
 	// set:
+	void setDefaultViewPosition(RawModel& eye) {
+		viewer.core().align_camera_center(eye.V(), eye.F());
+	}
 	void clearAllFixedPoints();
 
 private:

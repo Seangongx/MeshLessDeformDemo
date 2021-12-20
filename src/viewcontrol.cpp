@@ -16,16 +16,18 @@ ViewControl::ViewControl()
 void ViewControl::load() {
 
     viewer.data().clear();
-    viewer.data().show_lines = false;
     //viewer.data().double_sided = true;
 
     for (size_t t = 0; t < rawModels.size(); t++) {
+        viewer.data().show_lines = false;
         viewer.data().set_mesh(rawModels[t].V(), rawModels[t].F());
         viewer.append_mesh();
+        if (!rawModels[t].hasTEX())
+            viewer.data(t).set_colors(rawModels[t].getColor());
     }
 
 	for (size_t t = 0; t < models.size(); t++) {
-
+        viewer.data().show_lines = false;
 #ifdef DEBUG
         std::cout << "model " << t << ":";
         std::cout << "( " << models[t].V().rows() << " vertices, " << models[t].F().rows() << " triangles )" << std::endl;
@@ -69,8 +71,7 @@ void ViewControl::initMenu()
                     viewer.data().set_mesh(models[tid].V(), models[tid].F());
                     viewer.append_mesh();
                     viewer.data(tid).set_colors(models[tid].getColor());
-                    viewer.core().align_camera_center(models[tid].V(), models[tid].F());
-
+                    //viewer.core().align_camera_center(models[tid].V(), models[tid].F());
                 }
                 else {
                     std::cerr << "ERROR: FAIL TO LOAD MODEL" << std::endl;
@@ -143,7 +144,7 @@ void ViewControl::initEvents()
         int id = key - '0';
         if (id < 10 && id > -1) {
             std::cout << "Model (" << id << ") is desplayed\n";
-            viewer.core().align_camera_center(models[id].V(), models[id].F());
+            //viewer.core().align_camera_center(models[id].V(), models[id].F());
             return true;
         }
 

@@ -49,7 +49,7 @@ public:
 	inline double perturbation() const { return m_perturbation; }
 
 
-	inline size_t getID() { return m_id; }
+	inline size_t getId() { return m_id; }
 	inline DeformMode getMode() const { return m_mode; }
 	inline Eigen::RowVector3d getColor() { return m_color; } // no set for now
 
@@ -68,7 +68,7 @@ public:
 	bool loadOBJ(std::string const& filepath);
 	//bool loadTEX(std::string const& filepath); // TODO:
 
-	inline void setID(size_t id) { m_id = id; }
+	inline void setId(size_t id) { m_id = id; }
 	inline void setMode(DeformMode mode) { m_mode = mode; }
 	inline void setalpha(double a) { m_alpha = a; }
 	inline void setbeta(double b) { m_beta = b; }

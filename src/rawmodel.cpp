@@ -60,11 +60,20 @@ void RawModel::scale(Eigen::RowVector3d& t)
     }
 }
 
+/**
+* calculate a rotation of angle 'theta' around a given direction defined by vector 'u'
+* @param u  a vector corresponding to the rotation axis
+* @param theta  rotation angle
+  */
 void RawModel::rotate(Eigen::RowVector3d u, double theta) {
-    u.normalize();
-    // never forget to normalize
-    Eigen::Quaterniond q = Eigen::Quaterniond(cos(theta) / 2, sin(theta) * u.x(), sin(theta) * u.y(), sin(theta) * u.z()).normalized();
 
+    u.normalize(); // never forget to normalize axis
+    Eigen::Quaterniond q = Eigen::Quaterniond(
+        cos(theta / 2),
+        sin(theta / 2) * u.x(),
+        sin(theta / 2) * u.y(),
+        sin(theta / 2) * u.z()
+    ).normalized();
     for (int i = 0; i < m_V.rows(); i++)
     {
         Eigen::Quaterniond x = Eigen::Quaterniond(0, m_V(i, 0), m_V(i, 1), m_V(i, 2));
@@ -72,6 +81,8 @@ void RawModel::rotate(Eigen::RowVector3d u, double theta) {
         m_V.row(i) = Eigen::Vector3d(v_.x(), v_.y(), v_.z());
     }
 }
+
+
 
 
 void RawModel::reset() {

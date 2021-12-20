@@ -11,6 +11,7 @@
 #include <igl/opengl/glfw/Viewer.h>
 #include "deformmodel.h"
 #include "viewcontrol.h"
+#define PI  3.14159265358979323846
 
 using namespace std;
 
@@ -50,56 +51,6 @@ void LoadCube(Eigen::MatrixXd& V, Eigen::MatrixXi& F)
 }
 
 /// <summary>
-/// Author: GONG Xun(telecom-paris)
-/// Date:  26/9/2021 INF-574 TP1
-/// </summary>
-/// <param name="V">Vertices data</param>
-/// <param name="t">translation</param>
-void translate(Eigen::MatrixXd& V, Eigen::RowVector3d& t)
-{
-    for (int i = 0; i < V.rows(); i++)
-    {
-        V.row(i) += t;
-    }
-}
-
-/// <summary>
-/// Author: GONG Xun(telecom-paris)
-/// Date:  26/9/2021 INF-574 TP1
-/// </summary>
-/// <param name="V">Vertices data</param>
-/// <param name="t">translation</param>
-void scale(Eigen::MatrixXd& V, Eigen::RowVector3d& t)
-{
-    for (int i = 0; i < V.rows(); i++)
-    {
-        V.row(i).x() *= t.x();
-        V.row(i).y() *= t.y();
-        V.row(i).z() *= t.z();
-    }
-}
-
-/// <summary>
-/// Author: GONG Xun(telecom-paris)
-/// Date:  26/9/2021 INF-574 TP1
-/// </summary>
-/// <param name="V"> Vertices data </param>
-/// <param name="u"> Transform axis</param>
-/// <param name="theta"> Angle using double</param>
-void rotate(Eigen::MatrixXd& V, Eigen::RowVector3d u, double theta) {
-    u.normalize();
-    // never forget to normalize
-    Eigen::Quaterniond q = Eigen::Quaterniond(cos(theta) / 2, sin(theta) * u.x(), sin(theta) * u.y(), sin(theta) * u.z()).normalized();
-
-    for (int i = 0; i < V.rows(); i++)
-    {
-        Eigen::Quaterniond x = Eigen::Quaterniond(0, V(i, 0), V(i, 1), V(i, 2));    // .normalized(); we don't need normalize vector
-        Eigen::Quaterniond v_ = q * x * q.conjugate();                       //v_.normalize();
-        V.row(i) = Eigen::Vector3d(v_.x(), v_.y(), v_.z());
-    }
-}
-
-/// <summary>
 /// Inner test Scene with three walls and one ground
 /// </summary>
 /// <param name="V"> Vertices data </param>
@@ -110,36 +61,47 @@ void LoadDefaultScene(ViewControl& vc) {
     Eigen::MatrixXi F_Plane;
 
     LoadCube(V_Plane, F_Plane);
-    Eigen::MatrixXd tempV[4];
-    Eigen::MatrixXi tempF[4];
+    std::vector<Eigen::MatrixXd> planesV;
+    std::vector<Eigen::MatrixXi> planesF;
+
+
     for (int i = 0; i < 4; i++) {
-        tempV[i] = V_Plane;
-        tempF[i] = F_Plane;
+        Eigen::MatrixXd tempV = V_Plane;
+        Eigen::MatrixXi tempF = F_Plane;
+        planesV.push_back(tempV);
+        planesF.push_back(tempF);
     }
-    // Left
 
+    // Set default camera position
+    RawModel eye(planesV[0], planesF[0], vc.getDeformSize());
+    eye.scale(Eigen::RowVector3d(0.05, 0.05, 0.05));
+    eye.translate(Eigen::RowVector3d(30, 30, 30));
+    eye.setColor(Eigen::RowVector3d(1, 1, 1)); // light eye
+    vc.addModel(eye);
     // Middle
-    Rawdata d1 = { tempV[1], tempF[1] };
-    RawModel p1(tempV[1], tempF[1], vc.getDeformSize());
-    std::cout << "P1 vertices: " << p1.V().rows() << " and P1 Faces: " << p1.F().rows() << std::endl;
-    p1.scale(Eigen::RowVector3d(20, 0.05, 20));
-    p1.translate(Eigen::RowVector3d(-10, -0.025, -10));
-    p1.rotate(Eigen::RowVector3d(0, 1, 0), 1.57);
-    std::cout << "P1 vertices: " << p1.V().rows() << " and P1 Faces: " << p1.F().rows() << std::endl;
-
+    //Rawdata d1 = { tempV[1], tempF[1] };
+    //RawModel p1(tempV[1], tempF[1], vc.getDeformSize());
+    RawModel p1(planesV[1], planesF[1], vc.getDeformSize());
+    p1.scale(Eigen::RowVector3d(20, 0.1, 20));
+    p1.rotate(Eigen::RowVector3d(0, 0, 1), PI / 2);
+    p1.translate(Eigen::RowVector3d(-10, -0.1, -10));
+    p1.setColor(Eigen::RowVector3d(0.9, 0, 0)); // red
     vc.addModel(p1);
     // Right
-
-
+    RawModel p2(planesV[2], planesF[2], vc.getDeformSize());
+    p2.scale(Eigen::RowVector3d(20, 0.1, 20));
+    p2.rotate(Eigen::RowVector3d(1, 0, 0), -PI / 2);
+    p2.translate(Eigen::RowVector3d(-10, -0.1, -10));
+    p2.setColor(Eigen::RowVector3d(0, 0.9, 0)); // green
+    vc.addModel(p2);
     // Ground
-    RawModel p3(tempV[3], tempF[3], vc.getDeformSize());
-    std::cout << "P3 vertices: " << p3.V().rows() << " and P3 Faces: " << p3.F().rows() << std::endl;
-    p3.scale(Eigen::RowVector3d(20, 0.05, 20));
-    p3.translate(Eigen::RowVector3d(-10, -0.025, -10));
-    std::cout << "P3 vertices: " << p3.V().rows() << " and P3 Faces: " << p3.F().rows() << std::endl;
-
+    RawModel p3(planesV[3], planesF[3], vc.getDeformSize());
+    p3.scale(Eigen::RowVector3d(20, 0.1, 20));
+    p3.translate(Eigen::RowVector3d(-10, -0.1, -10));
+    p3.setColor(Eigen::RowVector3d(0, 0, 0.9)); // blue
     vc.addModel(p3);
 
+    //vc.setDefaultViewPosition(eye);
 }
 
 
@@ -148,25 +110,24 @@ int main(int argc, char* argv[])
     ViewControl vc;
     LoadDefaultScene(vc);
 
-    //std::cout << vc.getDeformSize() << std::endl;
-    //DeformModel cube("../data/cube.obj", vc.getDeformSize());
-    //vc.addModel(cube);
+    DeformModel cube("../data/cube.obj", vc.getDeformSize());
+    vc.addModel(cube);
 
-    //// Model Select
-    //if (argc < 2) {
-    //    std::cerr << "MAYBE FAIL TO LOAD YOU WANT...\n \
-    //                 REMEMBER DIFFERENT PATH BETWEEN WINDOWS AND LINUX" << std::endl;
-    //}
-    //else
-    //{
-    //    for (size_t i = 1; i < argc; i++) {
+    // Model Select
+    if (argc < 2) {
+        std::cerr << "MAYBE FAIL TO LOAD YOU WANT...\n \
+                     REMEMBER DIFFERENT PATH BETWEEN WINDOWS AND LINUX" << std::endl;
+    }
+    else
+    {
+        for (size_t i = 1; i < argc; i++) {
 
-    //        std::string filepath(argv[i]);
-    //        DeformModel dm(filepath, vc.getDeformSize());
-    //        dm.translate(Eigen::RowVector3d(2.5 * Eigen::RowVector3d::Random().array() + 2.5));
-    //        vc.addModel(dm);
-    //    }
-    //}
+            std::string filepath(argv[i]);
+            DeformModel dm(filepath, vc.getDeformSize());
+            //dm.translate(Eigen::RowVector3d(2.5 * Eigen::RowVector3d::Random().array() + 2.5));
+            vc.addModel(dm);
+        }
+    }
 
     // Plot the mesh
     vc.load();

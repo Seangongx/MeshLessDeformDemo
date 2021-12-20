@@ -28,7 +28,7 @@ public:
 	inline Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic>& A() { return m_A; }
 
 	inline size_t getID() { return m_id; }
-	inline Eigen::RowVector3d getColor() { return m_color; } // no set for now
+	inline Eigen::RowVector3d getColor() { return m_color; }
 
 	inline bool hasTEX() { return m_hasTEX; }
 	size_t getMemoryBytes();
@@ -36,7 +36,8 @@ public:
 #pragma endregion
 
 #pragma region set
-	inline void setID(size_t id) { m_id = id; }
+	inline void setId(size_t id) { m_id = id; }
+	inline void setColor(Eigen::RowVector3d color) { m_color = color; }
 
 	void reset();
 
@@ -69,6 +70,8 @@ private:
 
 	// states
 	bool m_hasTEX = false;
+	bool m_hasCOLOR = false;
+
 
 };
 
