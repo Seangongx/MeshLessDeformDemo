@@ -13,7 +13,7 @@ RawModel::RawModel(Eigen::MatrixXd& V, Eigen::MatrixXi& F, size_t id)
 
     m_V = V;
     m_F = F;
-    std::cout << m_filepath << "'s model vertices: " << m_V.size() << " and Model Faces: " << m_F.rows() << std::endl;
+    std::cout << m_filepath << "'s raw model vertices: " << m_V.size() << " and Faces: " << m_F.rows() << std::endl;
 }
 
 RawModel::RawModel(Rawdata& data, size_t id)
@@ -83,8 +83,6 @@ void RawModel::rotate(Eigen::RowVector3d u, double theta) {
 }
 
 
-
-
 void RawModel::reset() {
     // properties
     // m_id  = 0; // do not reset this unless remove this instance
@@ -101,6 +99,7 @@ void RawModel::reset() {
 
     // states
     bool m_hasTEX = false;
+    bool m_hasCOLOR = false;
 
 }
 

@@ -72,6 +72,5 @@ private:
 	bool m_hasTEX = false;
 	bool m_hasCOLOR = false;
 
-
 };
 

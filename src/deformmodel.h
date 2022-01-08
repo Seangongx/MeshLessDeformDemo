@@ -25,9 +25,9 @@ public:
 
 #pragma region tranform
 
-	//void translate(Eigen::RowVector3d& t);
-	//void scale(Eigen::RowVector3d& s);
-	//void rotate(Eigen::RowVector3d u, double theta);
+	void translate(Eigen::RowVector3d& t);
+	void scale(Eigen::RowVector3d& s);
+	void rotate(Eigen::RowVector3d u, double theta);
 
 #pragma endregion
 

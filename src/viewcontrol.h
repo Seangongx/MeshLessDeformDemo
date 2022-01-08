@@ -6,8 +6,6 @@
 #include <filesystem> // c++17
 #include "deformmodel.h"
 
-#define DEBUG
-
 struct DeformParameters
 {
 	// Scene statistics(Display):
@@ -85,6 +83,8 @@ public:
 	}
 	void clearAllFixedPoints();
 
+	igl::opengl::glfw::Viewer viewer;
+
 private:
 	// Functions
 
@@ -99,7 +99,6 @@ private:
 	Pick pick;
 	ForceDir inputForce = NONE;
 
-	igl::opengl::glfw::Viewer viewer;
 	igl::opengl::glfw::imgui::ImGuiMenu menu;
 
 };

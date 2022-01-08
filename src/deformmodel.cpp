@@ -179,29 +179,50 @@ void DeformModel::reset()
     m_forces.setZero();
 }
 
-//#pragma region tranform
-//void DeformModel::translate(Eigen::RowVector3d& t)
-//{
-//    for (int i = 0; i < m_V.rows(); i++)
-//    {
-//        m_V.row(i) += t;
-//    }
-//    m_dtV = m_V;
-//}
-//
-//void DeformModel::scale(Eigen::RowVector3d& t)
-//{
-//
-//    for (int i = 0; i < m_V.rows(); i++)
-//    {
-//        m_V.row(i).x() *= t.x();
-//        m_V.row(i).y() *= t.y();
-//        m_V.row(i).z() *= t.z();
-//    }
-//    m_dtV = m_V;
-//}
-//
-//#pragma endregion
+#pragma region tranform
+void DeformModel::translate(Eigen::RowVector3d& t)
+{
+    for (int i = 0; i < m_V.rows(); i++) {
+        m_V.row(i) += t;
+    }
+    m_dtV = m_V;
+}
+
+void DeformModel::scale(Eigen::RowVector3d& t)
+{
+
+    for (int i = 0; i < m_V.rows(); i++) {
+        m_V.row(i).x() *= t.x();
+        m_V.row(i).y() *= t.y();
+        m_V.row(i).z() *= t.z();
+    }
+    m_dtV = m_V;
+}
+
+/**
+* calculate a rotation of angle 'theta' around a given direction defined by vector 'u'
+* @param u  a vector corresponding to the rotation axis
+* @param theta  rotation angle
+  */
+void DeformModel::rotate(Eigen::RowVector3d u, double theta) {
+
+    u.normalize(); // never forget to normalize axis
+    Eigen::Quaterniond q = Eigen::Quaterniond(
+        cos(theta / 2),
+        sin(theta / 2) * u.x(),
+        sin(theta / 2) * u.y(),
+        sin(theta / 2) * u.z()
+    ).normalized();
+    for (int i = 0; i < m_V.rows(); i++)
+    {
+        Eigen::Quaterniond x = Eigen::Quaterniond(0, m_V(i, 0), m_V(i, 1), m_V(i, 2));
+        Eigen::Quaterniond v_ = q * x * q.conjugate();
+        m_V.row(i) = Eigen::Vector3d(v_.x(), v_.y(), v_.z());
+    }
+    m_dtV = m_V;
+}
+
+#pragma endregion
 
 size_t DeformModel::getMemoryBytes()
 {

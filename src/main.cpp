@@ -13,6 +13,8 @@
 #include "viewcontrol.h"
 #define PI  3.14159265358979323846
 
+#define DEBUG
+
 using namespace std;
 
 /// <summary>
@@ -30,8 +32,7 @@ void LoadCube(Eigen::MatrixXd& V, Eigen::MatrixXi& F)
         1.0, 0.0, 0.0,
         1.0, 0.0, 1.0,
         1.0, 1.0, 0.0,
-        1.0, 1.0, 1.0).finished().array() + 0.0001;
-    // cout << "V:\n" << V << endl;
+        1.0, 1.0, 1.0).finished().array() + 0.0001; //forget what it is...
 
     // convert index to index-1 (from 0)
     F = (Eigen::MatrixXi(12, 3) <<
@@ -47,7 +48,6 @@ void LoadCube(Eigen::MatrixXd& V, Eigen::MatrixXi& F)
         1, 6, 2,
         2, 6, 8,
         2, 8, 4).finished().array() - 1;
-    // cout << "F:\n" << F << endl;
 }
 
 /// <summary>
@@ -64,44 +64,35 @@ void LoadDefaultScene(ViewControl& vc) {
     std::vector<Eigen::MatrixXd> planesV;
     std::vector<Eigen::MatrixXi> planesF;
 
-
+    // Store all planes
     for (int i = 0; i < 4; i++) {
         Eigen::MatrixXd tempV = V_Plane;
         Eigen::MatrixXi tempF = F_Plane;
         planesV.push_back(tempV);
         planesF.push_back(tempF);
     }
-
-    // Set default camera position
-    RawModel eye(planesV[0], planesF[0], vc.getDeformSize());
-    eye.scale(Eigen::RowVector3d(0.05, 0.05, 0.05));
-    eye.translate(Eigen::RowVector3d(30, 30, 30));
-    eye.setColor(Eigen::RowVector3d(1, 1, 1)); // light eye
-    vc.addModel(eye);
-    // Middle
-    //Rawdata d1 = { tempV[1], tempF[1] };
-    //RawModel p1(tempV[1], tempF[1], vc.getDeformSize());
+    
+    // Left Wall
     RawModel p1(planesV[1], planesF[1], vc.getDeformSize());
-    p1.scale(Eigen::RowVector3d(20, 0.1, 20));
-    p1.rotate(Eigen::RowVector3d(0, 0, 1), PI / 2);
-    p1.translate(Eigen::RowVector3d(-10, -0.1, -10));
-    p1.setColor(Eigen::RowVector3d(0.9, 0, 0)); // red
+    p1.scale(Eigen::RowVector3d(0.1, 20, 20));
+    p1.translate(Eigen::RowVector3d(-10.1, 0, -10));
+    p1.setColor(Eigen::RowVector3d(1.0f, 0.0f, 0.0f)); // red
     vc.addModel(p1);
-    // Right
+    // Middle Wall
     RawModel p2(planesV[2], planesF[2], vc.getDeformSize());
-    p2.scale(Eigen::RowVector3d(20, 0.1, 20));
-    p2.rotate(Eigen::RowVector3d(1, 0, 0), -PI / 2);
-    p2.translate(Eigen::RowVector3d(-10, -0.1, -10));
-    p2.setColor(Eigen::RowVector3d(0, 0.9, 0)); // green
+    p2.scale(Eigen::RowVector3d(20, 20, 0.1));
+    p2.translate(Eigen::RowVector3d(-10, 0, -10.1));
+    p2.setColor(Eigen::RowVector3d(0, 1.0, 0)); // green
     vc.addModel(p2);
     // Ground
     RawModel p3(planesV[3], planesF[3], vc.getDeformSize());
     p3.scale(Eigen::RowVector3d(20, 0.1, 20));
     p3.translate(Eigen::RowVector3d(-10, -0.1, -10));
-    p3.setColor(Eigen::RowVector3d(0, 0, 0.9)); // blue
+    p3.setColor(Eigen::RowVector3d(0, 0, 1.0)); // blue
     vc.addModel(p3);
 
-    //vc.setDefaultViewPosition(eye);
+    // Adjust camera position
+    vc.viewer.core().camera_eye = Eigen::Vector3f(30.0f, 30.0f, 30.0f);
 }
 
 
@@ -110,8 +101,10 @@ int main(int argc, char* argv[])
     ViewControl vc;
     LoadDefaultScene(vc);
 
+#ifndef DEBUG
     DeformModel cube("../data/cube.obj", vc.getDeformSize());
     vc.addModel(cube);
+#endif
 
     // Model Select
     if (argc < 2) {
