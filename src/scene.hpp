@@ -4,10 +4,9 @@
 #include <igl/opengl/glfw/imgui/ImGuiHelpers.h>
 #include <igl/file_dialog_open.h>
 #include <filesystem> // c++17
-#include "deformmodel.h"
+#include "models/deformmodel.hpp"
 
-struct DeformParameters
-{
+struct gui_parameters {
 	// Scene statistics(Display):
 	unsigned int meshes = 0;
 	unsigned int fps = 0;
@@ -34,8 +33,7 @@ struct DeformParameters
 };
 
 
-struct Pick
-{
+struct pick_t {
 	bool picked = false;
 	DeformModel* object;
 	int mouseX, mouseY;
@@ -46,7 +44,7 @@ struct Pick
 	Eigen::Vector3f bc;
 };
 
-enum ForceDir
+enum DIRECTION
 {
 	NONE,
 	UP,
@@ -57,13 +55,12 @@ enum ForceDir
 	BACKWARD
 };
 
-class ViewControl
+class scene_structure
 {
 public:
-	ViewControl();
+	scene_structure();
 
 	// Interfaces:
-	//inline void addModel(Rawdata& d) { rawModels.push_back(d); }
 	inline void addModel(RawModel& d) { rawModels.push_back(d); }
 	inline void addModel(DeformModel& d) { models.push_back(d); }
 	inline void removeModel(size_t id) { models.erase(models.begin() + id); }
@@ -78,12 +75,11 @@ public:
 	inline size_t getDeformSize() { return models.size(); }
 
 	// set:
-	void setDefaultViewPosition(RawModel& eye) {
-		viewer.core().align_camera_center(eye.V(), eye.F());
+	void setDefaultViewPosition(Eigen::Vector3f eye) {
+		viewer.core().camera_eye = eye;
 	}
 	void clearAllFixedPoints();
 
-	igl::opengl::glfw::Viewer viewer;
 
 private:
 	// Functions
@@ -95,10 +91,11 @@ private:
 
 	std::vector<RawModel> rawModels;
 	std::vector<DeformModel> models;
-	DeformParameters params;
-	Pick pick;
-	ForceDir inputForce = NONE;
+	gui_parameters params;
+	pick_t pick;
+	DIRECTION inputForce = NONE;
 
+	igl::opengl::glfw::Viewer viewer;
 	igl::opengl::glfw::imgui::ImGuiMenu menu;
 
 };

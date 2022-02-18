@@ -1,4 +1,4 @@
-#include "rawmodel.h"
+#include "rawmodel.hpp"
 #include <igl/readOBJ.h>
 #include <iostream>
 //#include <igl/png/readPNG.h>
@@ -101,6 +101,15 @@ void RawModel::reset() {
     bool m_hasTEX = false;
     bool m_hasCOLOR = false;
 
+}
+
+size_t RawModel::getMemoryBytes()
+{
+    std::size_t mem = 0;
+    mem += m_V.rows() * m_V.cols() * sizeof(decltype(m_V)::CoeffReturnType);
+    mem += m_F.rows() * m_F.cols() * sizeof(decltype(m_F)::CoeffReturnType);
+
+    return mem;
 }
 
 /* ----------------------TODO------------------------ */

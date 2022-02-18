@@ -1,4 +1,4 @@
-#include "viewcontrol.h"
+#include "scene.hpp"
 #include <functional> // for bind functions
 #include <chrono>
 #include <igl/unproject.h>
@@ -6,14 +6,14 @@
 #include <igl/unproject_onto_mesh.h>
 #include <igl/unproject.h>
 
-ViewControl::ViewControl() 
+scene_structure::scene_structure() 
 {
 	initMenu();
     initEvents();
 
 }
 
-void ViewControl::load() {
+void scene_structure::load() {
 
     viewer.data().clear();
     //viewer.data().double_sided = true;
@@ -41,7 +41,7 @@ void ViewControl::load() {
     //viewer.data().set_face_based(true);
 };
 
-void ViewControl::initMenu()
+void scene_structure::initMenu()
 {
 
 	viewer.plugins.push_back(&menu);
@@ -132,11 +132,12 @@ void ViewControl::initMenu()
 
     };
 
+    // important setting:
     viewer.core().is_animating = true;
 
 }
 
-void ViewControl::initEvents()
+void scene_structure::initEvents()
 {
     // Switch models between 0~9
     viewer.callback_key_down = [this](igl::opengl::glfw::Viewer& viewer, int key, int modifier) -> bool {
@@ -365,7 +366,7 @@ void ViewControl::initEvents()
 
 }
 
-void ViewControl::simulate()
+void scene_structure::simulate()
 {
     if (rawModels.size() + models.size() < 1)
         return;
@@ -438,7 +439,7 @@ void ViewControl::simulate()
 };
 
 
-void ViewControl::clearAllFixedPoints()
+void scene_structure::clearAllFixedPoints()
 {
     for (auto m :models) {
         m.clearFixed();

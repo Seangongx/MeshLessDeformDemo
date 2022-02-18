@@ -69,6 +69,7 @@ private:
 	size_t m_id;
 
 	// states
+
 	bool m_hasTEX = false;
 	bool m_hasCOLOR = false;
 

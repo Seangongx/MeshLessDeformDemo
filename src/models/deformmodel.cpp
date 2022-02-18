@@ -1,4 +1,4 @@
-#include "deformmodel.h"
+#include "deformmodel.hpp"
 #include <igl/readOBJ.h>
 #include <iostream>
 //#include <igl/png/readPNG.h>
@@ -12,7 +12,7 @@ DeformModel::DeformModel(Rawdata& data, size_t id)
 
     m_V = data.V;
     m_F = data.F;
-    m_dtV = m_V;
+    m_X = m_V;
     m_fixed.resize(m_V.rows(), 1);
     m_fixed.setConstant(false);
 
@@ -95,7 +95,7 @@ bool DeformModel::loadOBJ(std::string const& filepath)
         return result;
     }
 
-    m_dtV = m_V;
+    m_X = m_V;
     m_fixed.resize(m_V.rows(), 1);
     m_fixed.setConstant(false);
 
@@ -168,7 +168,7 @@ void DeformModel::reset()
 {
     m_V.setZero();
     m_F.setZero();
-    m_dtV.setZero();
+    m_X.setZero();
     m_fixed.setConstant(false);
 
     m_qi_3d.setZero();
@@ -185,7 +185,7 @@ void DeformModel::translate(Eigen::RowVector3d& t)
     for (int i = 0; i < m_V.rows(); i++) {
         m_V.row(i) += t;
     }
-    m_dtV = m_V;
+    m_X = m_V;
 }
 
 void DeformModel::scale(Eigen::RowVector3d& t)
@@ -196,7 +196,7 @@ void DeformModel::scale(Eigen::RowVector3d& t)
         m_V.row(i).y() *= t.y();
         m_V.row(i).z() *= t.z();
     }
-    m_dtV = m_V;
+    m_X = m_V;
 }
 
 /**
@@ -219,7 +219,7 @@ void DeformModel::rotate(Eigen::RowVector3d u, double theta) {
         Eigen::Quaterniond v_ = q * x * q.conjugate();
         m_V.row(i) = Eigen::Vector3d(v_.x(), v_.y(), v_.z());
     }
-    m_dtV = m_V;
+    m_X = m_V;
 }
 
 #pragma endregion
@@ -229,7 +229,7 @@ size_t DeformModel::getMemoryBytes()
     std::size_t mem = 0;
     mem += m_V.rows() * m_V.cols() * sizeof(decltype(m_V)::CoeffReturnType);
     mem += m_F.rows() * m_F.cols() * sizeof(decltype(m_F)::CoeffReturnType);
-    mem += m_dtV.rows() * m_dtV.cols() * sizeof(decltype(m_dtV)::CoeffReturnType);
+    mem += m_X.rows() * m_X.cols() * sizeof(decltype(m_X)::CoeffReturnType);
     //mem += Q_.rows() * Q_.cols() * sizeof(decltype(Q_)::CoeffReturnType);
     //mem += AqqInv_.rows() * AqqInv_.cols() * sizeof(decltype(AqqInv_)::CoeffReturnType);
     //mem += Qquadratic_.rows() * Qquadratic_.cols() *
@@ -248,12 +248,12 @@ Eigen::MatrixX3d DeformModel::apply_force(Eigen::Vector3d const& location, Eigen
     Eigen::Vector3d const direction = force.normalized();
 
     // build our test function for distributing the force on the mesh
-    Eigen::VectorXd t(m_dtV.rows());
+    Eigen::VectorXd t(m_X.rows());
     t.setZero();
 
     for (unsigned int i = 0; i < t.rows(); ++i)
     {
-        Eigen::Vector3d const r = m_dtV.block(i, 0, 1, m_dtV.cols()).transpose() - location;
+        Eigen::Vector3d const r = m_X.block(i, 0, 1, m_X.cols()).transpose() - location;
         double const s1 = r.dot(-direction);
         double const theta = std::acos(s1 / (r.norm() * direction.norm()));
         double const s2 = r.norm() * std::sin(theta);
@@ -283,66 +283,73 @@ Eigen::MatrixX3d DeformModel::apply_force(Eigen::Vector3d const& location, Eigen
 
 void DeformModel::integrate(double dt)
 {
-    if (m_mode != ROTATE && m_mode != LINEAR)
+    //Linear mode
+    if (m_mode != ROTATE && m_mode != LINEAR) 
         return;
 
-    // pi = xi - xcm
-    Eigen::Vector3d const xcm = m_dtV.colwise().mean().transpose();
-    Eigen::MatrixX3d const P = m_dtV.rowwise() - xcm.transpose();
+    // Pi = Xi - Xcm
+    Eigen::Vector3d const Xcm = m_X.colwise().mean().transpose();
+    Eigen::MatrixX3d const Pi = m_X.rowwise() - Xcm.transpose();
 
     Eigen::Matrix3d Apq;
     Apq.setZero();
 
-    assert(P.rows() == m_qi_3d.rows() && P.cols() == m_qi_3d.cols());
+    assert(Pi.rows() == m_qi_3d.rows() && Pi.cols() == m_qi_3d.cols());
 
     // Apq = [sum(mi*pi*qiT)]
-    for (unsigned int i = 0; i < P.rows(); ++i)
+    for (unsigned int i = 0; i < Pi.rows(); ++i)
     {
-        assert(P.cols() == 3);
+        assert(Pi.cols() == 3);
         Eigen::Vector3d const qi = m_qi_3d.block(i, 0, 1, m_qi_3d.cols()).transpose();
-        Eigen::Vector3d const pi = P.block(i, 0, 1, P.cols()).transpose();
+        Eigen::Vector3d const pi = Pi.block(i, 0, 1, Pi.cols()).transpose();
         assert(pi.rows() == 3 && pi.cols() == 1);
 
         Apq += m_mi * pi * qi.transpose();
     }
 
-    // S = sqrt(ApqT * Apq)
+    // S = sqrt(Apq^T * Apq) 
     Eigen::Matrix3d ApqSquared = (Apq.transpose() * Apq);
     Eigen::SelfAdjointEigenSolver<decltype(ApqSquared)> eigensolver(ApqSquared);
     Eigen::Matrix3d SInverse = eigensolver.operatorInverseSqrt();
+
     // Rotation Matrix R = Apq * SInverse
     Eigen::Matrix3d const R = Apq * SInverse;
 
     Eigen::Matrix3d A = Apq * m_Aqq_3d_inverse;
+    // 4.2 make sure the volume is conserved
     double const volume = A.determinant();
-    A = A / std::cbrt(volume); //4.2 make sure the volume is conserved
+    A = A / std::cbrt(volume);
 
     double const beta = (m_mode == ROTATE ? 0.0 : m_Beta);
-    Eigen::Matrix3d const T = m_Beta * A + (1 - m_Beta) * R; // Interpolate for Transform Matrix
+    // 4.2 undergo a linear transformation using T
+    Eigen::Matrix3d const T = beta * A + (1 - beta) * R; 
 
-    Eigen::MatrixX3d const g = (T * m_qi_3d.transpose()).transpose().rowwise() + xcm.transpose();
+    Eigen::MatrixX3d const g = (T * m_qi_3d.transpose()).transpose().rowwise() + Xcm.transpose();
 
-    double const alpha = dt / m_tau; // 3.5 discussed the problem
+    // 3.5 discussed the problem of 
+    double const alpha = dt / m_tau; 
 
-    Eigen::MatrixX3d const elasticity = alpha * (g - m_dtV);
+    Eigen::MatrixX3d const elasticity = alpha * (g - m_X);
     Eigen::MatrixX3d const acceleration = m_forces / m_mi;
 
-    for (unsigned int i = 0; i < m_dtV.rows(); ++i)
+    for (unsigned int i = 0; i < m_X.rows(); ++i)
     {
+        // V(t+h)
         if (m_fixed(i))
         {
             m_velocities.block(i, 0, 1, 3) = Eigen::RowVector3d{ 0.0, 0.0, 0.0 };
         }
         else
         {
-            m_velocities.block(i, 0, 1, 3) = 
-                m_velocities.block(i, 0, 1, 3) + 
+            m_velocities.block(i, 0, 1, 3) =
+                m_velocities.block(i, 0, 1, 3) +
                 (elasticity.block(i, 0, 1, 3) / dt) +
-                (dt * acceleration.block(i, 0, 1, 3)) -
-                m_beta * m_velocities.block(i, 0, 1, 3);
+                (dt * acceleration.block(i, 0, 1, 3));
+                //- m_beta * m_velocities.block(i, 0, 1, 3) // Rayleigh damping;
         }
 
-        m_dtV.block(i, 0, 1, 3) = m_dtV.block(i, 0, 1, 3) + dt * m_velocities.block(i, 0, 1, 3);
+        // X(t+h)
+        m_X.block(i, 0, 1, 3) = m_X.block(i, 0, 1, 3) + dt * m_velocities.block(i, 0, 1, 3);
     }
 
     m_forces.setZero(); 
@@ -351,49 +358,45 @@ void DeformModel::integrate(double dt)
 
 void DeformModel::integrate_quadratic(double dt)
 {
-    if (m_mode != QUADRATIC)
+    //quadratic mode
+    if (m_mode != QUADRATIC) 
         return;
 
-    Eigen::RowVector3d const xcm = m_dtV.colwise().mean();
-    Eigen::MatrixX3d const P = m_dtV.rowwise() - xcm;
-
-    // compute quadratic terms
+    // Pi = Xi - Xcm
+    Eigen::RowVector3d const Xcm = m_X.colwise().mean();
+    Eigen::MatrixX3d const Pi = m_X.rowwise() - Xcm;
+     
     Eigen::Matrix<double, 3, 9> ApqTilde; 
     ApqTilde.setZero();
 
     assert(m_qi_9d.rows() == m_qi_3d.rows());
-    assert(m_qi_9d.rows() == m_dtV.rows());
+    assert(m_qi_9d.rows() == m_X.rows());
     assert(m_qi_9d.rows() == m_V.rows());
     for (unsigned int i = 0; i < m_qi_9d.rows(); ++i)
     {
-        Eigen::Vector3d pi = P.block(i, 0, 1, 3).transpose();
+        Eigen::Vector3d pi = Pi.block(i, 0, 1, 3).transpose();
         Eigen::Matrix<double, 1, 9> qitilde_transpose = m_qi_9d.block(i, 0, 1, 9);
 
         ApqTilde += m_mi * pi * qitilde_transpose;
     }
 
-    // compute linear terms
+    // using linear terms to calculate RTiled
     Eigen::Matrix3d Apq;
     Apq.setZero();
-
-    assert(P.rows() == m_qi_3d.rows() && P.cols() == m_qi_3d.cols());
-
+    assert(Pi.rows() == m_qi_3d.rows() && Pi.cols() == m_qi_3d.cols());
     // Apq = [sum(mi*pi*qit)]
-    for (unsigned int i = 0; i < P.rows(); ++i)
+    for (unsigned int i = 0; i < Pi.rows(); ++i)
     {
-        assert(P.cols() == 3);
+        assert(Pi.cols() == 3);
         Eigen::Vector3d const qi = m_qi_3d.block(i, 0, 1, m_qi_3d.cols()).transpose();
-        Eigen::Vector3d const pi = P.block(i, 0, 1, P.cols()).transpose();
+        Eigen::Vector3d const pi = Pi.block(i, 0, 1, Pi.cols()).transpose();
         assert(pi.rows() == 3 && pi.cols() == 1);
 
         Apq += m_mi * pi * qi.transpose();
     }
-
     Eigen::Matrix3d ApqSquared = (Apq.transpose() * Apq);
-
     Eigen::SelfAdjointEigenSolver<decltype(ApqSquared)> eigensolver(ApqSquared);
     Eigen::Matrix3d SInv = eigensolver.operatorInverseSqrt();
-
     Eigen::Matrix3d const R = Apq * SInv;
 
     Eigen::Matrix<double, 3, 9> Rtilde;
@@ -410,14 +413,14 @@ void DeformModel::integrate_quadratic(double dt)
     Eigen::Matrix<double, 3, 9> const T = m_Beta * Atilde + (1 - m_Beta) * Rtilde;
 
     Eigen::MatrixX3d const shape = (T * m_qi_9d.transpose()).transpose();
-    Eigen::MatrixX3d const g = shape.rowwise() + xcm;
+    Eigen::MatrixX3d const g = shape.rowwise() + Xcm;
 
     double const alpha = dt / m_tau;
 
-    Eigen::MatrixX3d const elasticity = alpha * (g - m_dtV);
+    Eigen::MatrixX3d const elasticity = alpha * (g - m_X);
     Eigen::MatrixX3d const acceleration = m_forces / m_mi;
 
-    for (unsigned int i = 0; i < m_dtV.rows(); ++i)
+    for (unsigned int i = 0; i < m_X.rows(); ++i)
     {
         if (m_fixed(i))
         {
@@ -435,7 +438,7 @@ void DeformModel::integrate_quadratic(double dt)
             //vel + vel;
         }
 
-        m_dtV.block(i, 0, 1, 3) = m_dtV.block(i, 0, 1, 3) + dt * m_velocities.block(i, 0, 1, 3);
+        m_X.block(i, 0, 1, 3) = m_X.block(i, 0, 1, 3) + dt * m_velocities.block(i, 0, 1, 3);
     }
 
     m_forces.setZero();
