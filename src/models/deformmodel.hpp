@@ -2,12 +2,12 @@
 
 #include "rawmodel.hpp"
 
-enum DeformMode
+enum MODE
 { 
+	RIGID,
 	LINEAR, 
-	QUADRATIC,
-	// PLASTIC,
-	ROTATE
+	QUADRATIC
+	// PLASTIC
 };
 
 class DeformModel
@@ -46,7 +46,7 @@ public:
 
 
 	inline size_t getId() { return m_id; }
-	inline DeformMode getMode() const { return m_mode; }
+	inline MODE getMode() const { return m_mode; }
 	inline Eigen::RowVector3d getColor() { return m_color; } // no set for now
 
 
@@ -65,7 +65,7 @@ public:
 	//bool loadTEX(std::string const& filepath); // TODO:
 
 	inline void setId(size_t id) { m_id = id; }
-	inline void setMode(DeformMode mode) { m_mode = mode; }
+	inline void setMode(MODE mode) { m_mode = mode; }
 	inline void setalpha(double a) { m_alpha = a; }
 	inline void setbeta(double b) { m_beta = b; }
 	inline void setBeta(double B) { m_Beta = B; }
@@ -87,39 +87,44 @@ public:
 #pragma endregion
 
 private:
-	// data
 
-	Eigen::MatrixXd m_V; // initial Vertices
-	Eigen::MatrixXi m_F; // initial Faces(Triangles for now)
-	Eigen::RowVector3d m_color;
+	// ****************************** //
+	// precompute data
+	// ****************************** //
+
+	Eigen::MatrixXd			m_V; // initial Vertices
+	Eigen::MatrixXi			m_F; // initial Faces(Triangles for now)
+	Eigen::RowVector3d		m_color;
+	Eigen::MatrixX3d		m_forces; // instant force in intergration
+	Eigen::MatrixX3d		m_velocities;
 	Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> m_R, m_G, m_B, m_A;
-	Eigen::Array<bool, Eigen::Dynamic, 1> m_fixed;
-	Eigen::MatrixX3d m_forces; // instant force in intergration
-	Eigen::MatrixX3d m_velocities;
+	Eigen::Array<bool, Eigen::Dynamic, 1>		m_fixed;
 
-	Eigen::MatrixX3d m_X; // store position (m_X == m_V at the begin)
-	Eigen::MatrixX3d m_qi_3d; // store qi = xi0 - xicm0
-	Eigen::Matrix<double, Eigen::Dynamic, 9> m_qi_9d; // store qi = xi0 - xicm0 (extended to 9 dimensions)
-	Eigen::Matrix3d m_Aqq_3d_inverse; // precomputed Aqq for 3 dimensions
-	Eigen::Matrix<double, 9, 9> m_Aqq_9d_inverse; // precomputed Aqq for 9 dimensions
+	Eigen::MatrixX3d		m_X; // store position (m_X == m_V at the begin)
+	Eigen::MatrixX3d		m_qi_3d; // store qi = xi0 - xicm0
+	Eigen::Matrix<double, Eigen::Dynamic, 9>	m_qi_9d; // store qi = xi0 - xicm0 (extended to 9 dimensions)
+	Eigen::Matrix3d			m_Aqq_3d_inverse; // precomputed Aqq for 3 dimensions
+	Eigen::Matrix<double, 9, 9>					m_Aqq_9d_inverse; // precomputed Aqq for 9 dimensions
 
-	// properties
+	// ****************************** //
+	// control parameters
+	// ****************************** //
 
-	std::string m_filepath;
-	size_t m_id;
-	DeformMode m_mode = LINEAR;
-	
-	double m_alpha = 0.0;				// stiffness parameter
-	double m_beta = 0.0;				//
-	double m_tau = 0.0;					// time constant to vary velocity update for varying time steps.
-	double m_Beta = 0.0;				// rotate parameter
-	double m_perturbation = 0.1;
+	MODE	m_mode			= RIGID;
+	double		m_alpha			= 0.0;	// stiffness parameter
+	double		m_beta			= 0.0;	//
+	double		m_tau			= 0.0;	// time constant to vary velocity update for varying time steps.
+	double		m_Beta			= 0.0;	// rotate parameter
+	double		m_perturbation	= 0.1;
+	double		m_mi			= 1.0;	// default mass weight
 
-	double m_mi = 1.0; // mass weight
+	// ****************************** //
+	// model properties
+	// ****************************** //
 
-	// states
-
-	bool m_hasTEX = false;
+	std::string	m_filepath;
+	size_t		m_id;
+	bool		m_hasTEX = false;
 
 };
 

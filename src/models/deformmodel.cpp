@@ -284,7 +284,7 @@ Eigen::MatrixX3d DeformModel::apply_force(Eigen::Vector3d const& location, Eigen
 void DeformModel::integrate(double dt)
 {
     //Linear mode
-    if (m_mode != ROTATE && m_mode != LINEAR) 
+    if (m_mode != RIGID && m_mode != LINEAR) 
         return;
 
     // Pi = Xi - Xcm
@@ -320,7 +320,7 @@ void DeformModel::integrate(double dt)
     double const volume = A.determinant();
     A = A / std::cbrt(volume);
 
-    double const beta = (m_mode == ROTATE ? 0.0 : m_Beta);
+    double const beta = (m_mode == RIGID ? 0.0 : m_Beta);
     // 4.2 undergo a linear transformation using T
     Eigen::Matrix3d const T = beta * A + (1 - beta) * R; 
 

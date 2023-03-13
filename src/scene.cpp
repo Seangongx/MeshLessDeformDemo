@@ -6,11 +6,11 @@
 #include <igl/unproject_onto_mesh.h>
 #include <igl/unproject.h>
 
-scene_structure::scene_structure() 
+void scene_structure::initialize() 
 {
+    initScene();
 	initMenu();
     initEvents();
-
 }
 
 void scene_structure::load() {
@@ -94,6 +94,10 @@ void scene_structure::initMenu()
 
         if (ImGui::CollapsingHeader("Deformation Mode", ImGuiTreeNodeFlags_DefaultOpen))
         {
+            if (ImGui::RadioButton("Rigid", (int*)(&params.mode), 3))
+            {
+                params.mode = RIGID;
+            }
             if (ImGui::RadioButton("Linear", (int*)(&params.mode), 0))
             {
                 params.mode = LINEAR;
@@ -106,10 +110,6 @@ void scene_structure::initMenu()
             //{
             //    ;
             //}
-            if (ImGui::RadioButton("Rotation", (int*)(&params.mode), 3))
-            {
-                params.mode = ROTATE;
-            }
         }
 
         if (ImGui::CollapsingHeader("Visualization", ImGuiTreeNodeFlags_DefaultOpen))
@@ -446,3 +446,78 @@ void scene_structure::clearAllFixedPoints()
     }
 }
 
+
+// ****************************** //
+// functions (call from inside)
+// ****************************** //
+
+// Default scene with three walls and one ground
+void scene_structure::initScene()
+{
+    // Given a plane
+    Eigen::MatrixXd V_Plane;
+    Eigen::MatrixXi F_Plane;
+
+    primitive_cube(V_Plane, F_Plane);
+    std::vector<Eigen::MatrixXd> planesV;
+    std::vector<Eigen::MatrixXi> planesF;
+
+    // Store all planes
+    for (int i = 0; i < 4; i++) {
+        Eigen::MatrixXd tempV = V_Plane;
+        Eigen::MatrixXi tempF = F_Plane;
+        planesV.push_back(tempV);
+        planesF.push_back(tempF);
+    }
+
+    // Left Wall
+    RawModel p1(planesV[1], planesF[1], getDeformSize());
+    p1.scale(Eigen::RowVector3d(0.1, 20, 20));
+    p1.translate(Eigen::RowVector3d(-10.1, 0, -10));
+    p1.setColor(Eigen::RowVector3d(221. / 255, 221. / 255, 240. / 255)); // red
+    addModel(p1);
+    // Middle Wall
+    RawModel p2(planesV[2], planesF[2], getDeformSize());
+    p2.scale(Eigen::RowVector3d(20, 20, 0.1));
+    p2.translate(Eigen::RowVector3d(-10, 0, -10.1));
+    p2.setColor(Eigen::RowVector3d(118. / 255, 118. / 255, 118. / 255)); // green
+    addModel(p2);
+    // Ground
+    RawModel p3(planesV[3], planesF[3], getDeformSize());
+    p3.scale(Eigen::RowVector3d(20, 0.1, 20));
+    p3.translate(Eigen::RowVector3d(-10, -0.1, -10));
+    p3.setColor(Eigen::RowVector3d(221. / 255, 221. / 255, 221. / 255)); // blue
+    addModel(p3);
+
+    // Initial settings
+    viewer.core().camera_eye = Eigen::Vector3f(2.f, 2.f, 2.f);
+    viewer.core().background_color = Eigen::Vector4f(251. / 255, 251. / 255, 251. / 255, 1);
+}
+
+void scene_structure::primitive_cube(Eigen::MatrixXd& V, Eigen::MatrixXi& F)
+{
+    V = (Eigen::MatrixXd(8, 3) <<
+        0.0, 0.0, 0.0,
+        0.0, 0.0, 1.0,
+        0.0, 1.0, 0.0,
+        0.0, 1.0, 1.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 1.0,
+        1.0, 1.0, 0.0,
+        1.0, 1.0, 1.0).finished().array() + 0.0001; //forget what it is...
+
+    // convert index to index-1 (from 0)
+    F = (Eigen::MatrixXi(12, 3) <<
+        1, 7, 5,
+        1, 3, 7,
+        1, 4, 3,
+        1, 2, 4,
+        3, 8, 7,
+        3, 4, 8,
+        5, 7, 8,
+        5, 8, 6,
+        1, 5, 6,
+        1, 6, 2,
+        2, 6, 8,
+        2, 8, 4).finished().array() - 1;
+}
